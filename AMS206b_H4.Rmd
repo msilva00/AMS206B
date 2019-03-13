@@ -1,0 +1,58 @@
+---
+title: "Assignment 4"
+author: "Mary Silva"
+date: "3/13/2019"
+output: pdf_document
+---
+
+```{r setup, include=F, echo=F}
+library(coda)
+library(mvtnorm)
+library(MASS)
+pdf_z = function(z){
+  -(3/2)*log(z) - theta_1*z - theta_2/z
+}
+```
+
+## 1A
+
+Using $theta_1 = 1.5$ and $theta_2 = 2$ we draw a sample of size 1000 using the independence Metropolis Hastings algorithm with gamma distribution as the proposal density.
+
+```{r}
+theta_1 = 1.5 # true value theta1
+theta_2 = 2 # true value theta2
+mean_z1 = sqrt(theta_2/theta_1)
+mean_z2 = sqrt(theta_1/theta_2) + 1/(2*theta_2)
+
+# hyperparams
+b = 2.5
+a = mean_z1*b
+#M-H Algorithm
+MH_alg1 = function(N){
+  MH_samples = rep(NA, N)
+  count = 0
+  current_z = 1.0
+  for(i in 1:N){
+    curr_p = pdf_z(current_z) 
+    z_new = rgamma(1, a, b)
+    p_new = pdf_z(z_new)
+    
+    accept = exp(p_new + dgamma(current_z,a,b,log = T) - p_new - dgamma(z_new,a,b,log = T))
+    if(runif(1) < accept){
+      current_z = z_new
+      count = count + 1
+    }
+    MH_samples[i] = current_z
+  }
+  return(list(MH_samples=MH_samples,count=count))
+}
+```
+
+```{r, echo=F}
+alg1 = MH_alg1(1000)
+MH_samples = alg1$MH_samples
+count = alg1$count
+mean(MH_samples)
+mean(1/MH_samples)
+plot.ts(MH_samples)
+```
