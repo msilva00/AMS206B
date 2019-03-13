@@ -1,7 +1,6 @@
 #### 1A ####
 theta_1 = 1.5 # true value theta1
 theta_2 = 2 # true value theta2
-
 mean_z1 = sqrt(theta_2/theta_1)
 mean_z2 = sqrt(theta_1/theta_2) + 1/(2*theta_2)
 
