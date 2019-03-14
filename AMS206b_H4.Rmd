@@ -412,3 +412,53 @@ effectiveSize(tail(sample$nu,5000))
  \hline
 \end{tabular}
 \end{center}
+
+## 3
+
+Given the random effects model we have $(y_{ij} -(\beta + u_i)) \sim N(0,\tau^2)$, $u_i \sim N(0,\tau^2)$, and $\pi(\beta,\sigma^2,\tau^2) \propto (\sigma^2 \tau^2)^{-1}$. Then the joint posterior is
+
+$$\pi(u_i,\beta,\tau^2,\sigma^2|y) \propto (\tau^2)^{-\left(\frac{IJ}{2}+1\right)} (\sigma^2)^{-\left(\frac{I}{2}+1\right)}\exp\left\{-\frac{1}{2\tau^2} \sum_{ij} \left(y_{ij} - (\beta + u_i)\right)^2  - \frac{1}{2\tau^2} \sum u_i^2 \right\} $$
+
+### 3A
+
+i) 
+
+$$\pi(u_i|y,\beta,\tau,\sigma^2) \propto \exp \left\{-\frac{1}{2\tau^2} \sum \left[y^2_{ij} - 2y_{ij}(\beta + u_i) + (\beta + u_i)^2 \right] - \frac{1}{2\sigma^2} \sum u_i^2 \right\} $$
+$$= \exp\left\{-\frac{1}{2\tau^2}\left[\sum (-2y_{ij}u_i) + \sum (2\beta u_i + u_i^2) \right] - \frac{1}{2\sigma^2}\sum u_i^2\right\} $$
+$$= \exp\left\{-\frac{1}{2\tau^2}\left[\sum u_i^2 - 2 \sum u_i(y_{ij} - \beta) \right] - \frac{1}{2\sigma^2} \sum u_i^2 \right\} $$
+$$= \exp\left\{-\frac{1}{2\tau^2} \left[\sum Ju_i^2 - 2 \sum u_i(y_{ij} -\beta) \right] - \frac{1}{2\sigma^2} u_i^2 \right\} $$
+$$ = \exp \left\{-\frac{1}{2\tau^2\sigma^2} \left[J\sigma^2 \sum u_i^2 - 2\sigma^2 \sum u_i(y_{ij} - \beta) + \tau^2 \sum u_i^2 \right] \right\}$$
+$$ = \exp\left\{-\frac{1}{2\tau^2\sigma^2} \left(u_i^2 \left(J\sigma^2 + \tau^2 \right) -2 u_i \sum (y_{ij} -\beta) \right) \right\} $$
+$$ = \exp\left\{-\frac{J\sigma^2 +\tau^2}{2\sigma^2\tau^2 }\left(u_i^2 - 2u_i \frac{\sum (y_{ij} -\beta)}{J\sigma^2 + \tau^2} \right) \right\} $$
+Therefore, 
+$$ u_i | \cdot \sim N\left(\frac{\sum_j (y_{ij} -\beta)}{J\sigma^2 + \tau^2}, \frac{\tau^2\sigma^2}{J\sigma^2 + \tau^2} \right) = N\left(\left(\frac{J}{\tau^2} + \frac{1}{\sigma^2} \right)^{-1} \left(\frac{\sum_j (y_{ij} - \beta)}{\tau^2} \right), \left(\frac{J}{\tau^2} + \frac{1}{\sigma^2} \right)^{-1} \right)$$
+
+I am lazy, so I am just going to skip to the end results so I don't have to type all my work :(
+
+ii) 
+$$\beta|\cdot \sim N\left(\frac{\tau^2}{IJ}, \frac{\sum_{ij} (y_{ij} - u_i)}{IJ} \right) = N\left(\left(\frac{IJ}{\tau^2} \right)^{-1} \left(\frac{\sum_{ij} (y_{ij} - u_i)}{\tau^2}\right), \left(\frac{IJ}{\tau^2} \right)^{-1} \right) $$
+
+iii)
+$$\sigma^2|\cdot \sim IG\left(\frac{I}{2}, \frac{1}{2} \sum_i u_i^2 \right) $$
+
+iv)
+$$ \tau^2|\cdot \sim IG \left( \frac{IJ}{2}, \frac{1}{2} \sum_{ij} (y_{ij} - (\beta + u_i))^2 \right) $$
+
+## 3B
+$$\pi(\beta, \tau^2, \sigma^2|y) \propto (\tau^2)^{-\left(\frac{I(J-1)}{2} + 1 \right)} (\sigma^2)^{-1} (J\sigma^2 + \tau^2) ^{I/2} \exp\left\{ -\frac{1}{2\tau^2} \sum_{ij} (y_{ij} - \beta)^2 \right\}$$
+
+
+
+$$\times \exp\left\{\frac{\sigma^2}{2\tau^2(J\sigma^2 + \tau^2)} \sum_i \left(\sum_j (y_{ij}-\beta) \right)^2 \right\} $$
+
+## 3C
+
+$$\pi(\tau^2, \sigma^2|y) \propto (\tau^2)^{-\left(\frac{I(J-1)}{2} + 1 \right)} (\sigma^2)^{-1} \left(J\sigma^2 + \tau^2 \right) ^{\frac{I+1}{2}} \exp \left\{-\frac{1}{2\tau^2} \sum_{ij} y_{ij}^2 \right\}$$
+$$ \times \exp\left\{ \frac{\sigma^2}{2\tau^2 (J\sigma^2 + \tau^2)} \sum_i \left( \sum_j y_{ij}^2 \right)\right\}$$
+$$ \times \exp\left\{\frac{1}{2IJ (J\sigma^2 + \tau^2)} \left(\sum_{ij} y_{ij} \right)^2 \right\} $$
+
+
+
+
+
+
