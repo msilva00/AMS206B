@@ -1,3 +1,7 @@
+install.packages("coda")
+install.packages("mvtnorm")
+install.packages("MASS")
+
 #### 1A ####
 theta_1 = 1.5 # true value theta1
 theta_2 = 2 # true value theta2

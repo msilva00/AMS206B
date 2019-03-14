@@ -2,10 +2,13 @@
 title: "Assignment 4"
 author: "Mary Silva"
 date: "3/13/2019"
-output: pdf_document
+output: 
+  pdf_document: 
+    keep_tex: yes
 ---
 
 ```{r setup, include=F, echo=F}
+set.seed(7)
 library(coda)
 library(mvtnorm)
 library(MASS)
@@ -16,7 +19,7 @@ pdf_z = function(z){
 
 ## 1A
 
-Using $theta_1 = 1.5$ and $theta_2 = 2$ we draw a sample of size 1000 using the independence Metropolis Hastings algorithm with gamma distribution as the proposal density.
+Using $\theta_1 = 1.5$ and $\theta_2 = 2$ we draw a sample of size 1000 using the independence Metropolis Hastings algorithm with gamma distribution as the proposal density.
 
 ```{r}
 theta_1 = 1.5 # true value theta1
@@ -48,11 +51,111 @@ MH_alg1 = function(N){
 }
 ```
 
+After trying several hyperparameters for different Gamma distributions, the best sample obtains a mean, $E(Z)$, of 
 ```{r, echo=F}
 alg1 = MH_alg1(1000)
 MH_samples = alg1$MH_samples
 count = alg1$count
 mean(MH_samples)
+```
+
+$E(1/Z)$
+
+```{r, echo=F}
 mean(1/MH_samples)
-plot.ts(MH_samples)
+```
+and an accuracy of 
+
+```{r, echo=F}
+count/length(MH_samples)
+```
+
+The traceplot for the samples for Metropolis-Hastings is shown below:
+
+```{r, echo=F}
+alg1 = MH_alg1(10000)
+MH_samples = alg1$MH_samples
+count = alg1$count
+# mean(MH_samples)
+# mean(1/MH_samples)
+plot.ts(MH_samples[0:1000])
+```
+
+## 1B
+The density of $W = log(Z)$ is given by
+$$ f_W(w) \propto \exp\left\{- \frac{3}{2} w - \theta_1 exp\{w\} - \frac{\theta_2}{\exp(w)} \right\} \exp(w) $$
+
+We draw a sample of size 1000 using the random-walk Metropolis algorithm with this density.
+
+```{r, echo=F, include=F}
+set.seed(1)
+pdf_z2 = function(z){
+  return(-(1/2)*log(z) - theta_1*z - theta_2/z)
+}
+
+```
+
+```{r}
+v = 0.01
+MH_RW = function(N){
+  N = N
+  MH_RW = rep(NA, N)
+  a_count = 0
+  z_curr = 1.0
+  for (i in 1:N) {
+    p_curr = pdf_z2(z_curr)
+    z_new = exp(log(z_curr) + rnorm(1,0,sqrt(v)))
+    p_new = pdf_z2(z_new)
+    acceptance = exp(p_new - p_curr)
+    if(runif(1) < acceptance){
+      z_curr = z_new
+      a_count = a_count+1
+    }
+    MH_RW[i] = z_curr
+  }
+  return(list(MH_RW=MH_RW, a_count=a_count))
+}
+```
+
+```{r, echo=F}
+alg2 = MH_RW(10000)
+MH_RW = alg2$MH_RW
+count = alg2$a_count
+```
+
+The mean for the samples is 
+```{r, echo=F}
+(mean2_1 = mean(MH_RW))
+```
+
+And the accuracy is
+```{r,echo=F}
+count/length(MH_RW)
+```
+
+If we use 10000 metropolis hastings random ralk samples, the traceplot is shown below
+
+```{r, echo=F}
+plot.ts(MH_RW)
+```
+
+## 2A
+
+$$x_i |\nu,\theta \sim Gamma(\nu,\theta)$$
+$$\nu \sim Gamma(a,b)$$
+$$\theta \sim Gamma(\alpha,\beta)$$
+The joint posterior for $\theta$ and $\nu$
+$$\pi(\theta,\nu,\pmb{x}) \propto  \frac{\left(\prod_{i=1}^nx_i \right)^{\nu-1}\nu^{a-1} e^{-b\nu}}{\left(\Gamma(\nu) \right)^n} \theta^{a+n\nu-1} \exp\left\{-\theta\left(\beta + \sum_{i=1}^n x_i \right) \right\}$$
+
+The full conditionals:
+$$\pi(\theta|\nu, \pmb{x}) \propto \theta^{a+n\nu-1}\exp\left\{-\theta\left(\beta + \sum_{i=1}^n x_i \right) \right\}$$
+
+thus, $\theta|\nu, \pmb{x} \sim Gamma(n\nu, \beta + \sum x_i)$.
+
+$$\pi(\nu|\theta,\pmb{x}) \propto \theta^{n\nu}\frac{\left(\prod_{i=1}^nx_i \right)^{\nu-1}\nu^{a-1} e^{-b\nu}}{\left(\Gamma(\nu) \right)^n}$$
+
+which is not a recognizable distribution. We use a Metropolis within Gibbs algorithm to sample from the full conditionals, using a random walk proposal on $log(\nu)$
+
+```{r, echo=F, include=F}
+
 ```
