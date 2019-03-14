@@ -231,6 +231,14 @@ plot.ts(sample$theta, ylab = expression(theta), xlab = "", main = "Trace")
 plot.ts(sample$nu, ylab = expression(nu), xlab = "", main = "Trace")
 ```
 
+The autocorrelation plots are below
+
+```{r, echo=F}
+par(mfrow=c(1,2), mar=c(4.5, 4.5, 2.1, 2.1))
+autocorr.plot(sample$theta, col=1, lwd=4, cex.axis=1.5, cex.lab=1.5, auto.layout = FALSE, main=expression(theta)) 
+autocorr.plot(sample$nu, col=1, lwd=4, cex.axis=1.5, cex.lab=1.5, auto.layout = FALSE, main=expression(nu))
+```
+
 ## 2B
 
 Now we develop a Metropolis-Hastings algorithm that jointly proposes $\log(\nu)$ and $\log(\theta)$ using
@@ -305,6 +313,14 @@ plot.ts(tail(sample$theta,5000),ylab = expression(theta), xlab = "", main = "Tra
 plot.ts(tail(sample$nu,5000), ylab = expression(nu), xlab = "", main = "Trace")
 ```
 
+The corresponding autocorrelation plot is below
+
+```{r,echo=F}
+par(mfrow=c(1,2), mar=c(4.5, 4.5, 2.1, 2.1))
+autocorr.plot(tail(sample$theta,5000), col=1, lwd=4, cex.axis=1.5, cex.lab=1.5, auto.layout = FALSE, main=expression(theta)) 
+autocorr.plot(tail(sample$nu,5000), col=1, lwd=4, cex.axis=1.5, cex.lab=1.5, auto.layout = FALSE, main=expression(nu))
+```
+
 ## 2C
 
 Now we are going to develop a Metropolis algorithm that jointly proposes $\log\nu$ and $\log\theta$ using independent proposals based on Laplace approximation of the posterior distribution of $\log\nu$ and $\log\theta$. 
@@ -360,10 +376,20 @@ for(i in N_test+1:N){
 }
 ```
 
+The corresponding traceplots are below
+
 ```{r, echo =F}
 par(mfrow = c(1,2))
 plot.ts(tail(sample$theta,5000), xlab="", ylab = expression(theta), main = "Traceplot")
 plot.ts(tail(sample$nu,5000), xlab="", ylab = expression(nu), main = "Traceplot")
+```
+
+The corresponding autocorrelation plots are below
+
+```{r,echo=F}
+par(mfrow=c(1,2), mar=c(4.5, 4.5, 2.1, 2.1))
+autocorr.plot(tail(sample$theta,5000), col=1, lwd=4, cex.axis=1.5, cex.lab=1.5, auto.layout = FALSE, main=expression(theta)) 
+autocorr.plot(tail(sample$nu,5000), col=1, lwd=4, cex.axis=1.5, cex.lab=1.5, auto.layout = FALSE, main=expression(nu))
 ```
 
 The effective sample size associated with $\theta$ is
