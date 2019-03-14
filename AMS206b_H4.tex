@@ -261,7 +261,6 @@ appropriate for this data.
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{sample =}\StringTok{ }\OtherTok{NULL}
-\NormalTok{N =}\StringTok{ }\DecValTok{1000}
 \NormalTok{sample}\OperatorTok{$}\NormalTok{theta =}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\OtherTok{NA}\NormalTok{,N)}
 \NormalTok{sample}\OperatorTok{$}\NormalTok{nu =}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\OtherTok{NA}\NormalTok{,N)}
 \NormalTok{alpha =}\StringTok{ }\DecValTok{3}
@@ -333,7 +332,7 @@ independently:
 \NormalTok{V =}\StringTok{ }\FloatTok{0.05}\OperatorTok{*}\KeywordTok{diag}\NormalTok{(}\DecValTok{2}\NormalTok{)}
 \NormalTok{theta_curr =}\StringTok{ }\DecValTok{2}
 \NormalTok{nu_curr =}\StringTok{ }\DecValTok{3}
-\NormalTok{N_test =}\StringTok{ }\DecValTok{5000}
+
 \ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{N_test)\{}
 \NormalTok{  nu_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\KeywordTok{log}\NormalTok{(nu_curr) }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\KeywordTok{sqrt}\NormalTok{(V[}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{])))}
 \NormalTok{  theta_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\KeywordTok{log}\NormalTok{(theta_curr) }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{, V[}\DecValTok{2}\NormalTok{,}\DecValTok{2}\NormalTok{]))}
@@ -352,7 +351,7 @@ independently:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in}\NormalTok{ N_test}\OperatorTok{+}\DecValTok{1}\OperatorTok{:}\DecValTok{10000}\NormalTok{)\{}
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in}\NormalTok{ N_test}\OperatorTok{+}\DecValTok{1}\OperatorTok{:}\NormalTok{N)\{}
 \NormalTok{  new =}\StringTok{ }\KeywordTok{mvrnorm}\NormalTok{(}\DecValTok{1}\NormalTok{, }\KeywordTok{c}\NormalTok{(}\KeywordTok{log}\NormalTok{(nu_curr), }\KeywordTok{log}\NormalTok{(theta_curr)), V)}
 \NormalTok{  nu_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(new[}\DecValTok{1}\NormalTok{])}
 \NormalTok{  theta_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(new[}\DecValTok{2}\NormalTok{])}
@@ -382,11 +381,11 @@ independently:
 
 The trace plot for these samples are below
 
-\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-21-1.pdf}
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-22-1.pdf}
 
 The corresponding autocorrelation plot is below
 
-\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-22-1.pdf}
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-23-1.pdf}
 
 \subsection{2C}\label{c}
 
@@ -458,24 +457,24 @@ sampling algorithm
 
 The corresponding traceplots are below
 
-\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-27-1.pdf}
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-28-1.pdf}
 
 The corresponding autocorrelation plots are below
 
-\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-28-1.pdf}
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-29-1.pdf}
 
 The effective sample size associated with \(\theta\) is
 
 \begin{verbatim}
 ##     var1 
-## 152.8612
+## 347.7253
 \end{verbatim}
 
 The effective sample size associated with \(\nu\) is
 
 \begin{verbatim}
 ##     var1 
-## 182.2601
+## 855.5197
 \end{verbatim}
 
 \begin{center}
@@ -540,6 +539,57 @@ to type all my work :(
 \[\pi(\tau^2, \sigma^2|y) \propto (\tau^2)^{-\left(\frac{I(J-1)}{2} + 1 \right)} (\sigma^2)^{-1} \left(J\sigma^2 + \tau^2 \right) ^{\frac{I+1}{2}} \exp \left\{-\frac{1}{2\tau^2} \sum_{ij} y_{ij}^2 \right\}\]
 \[ \times \exp\left\{ \frac{\sigma^2}{2\tau^2 (J\sigma^2 + \tau^2)} \sum_i \left( \sum_j y_{ij}^2 \right)\right\}\]
 \[ \times \exp\left\{\frac{1}{2IJ (J\sigma^2 + \tau^2)} \left(\sum_{ij} y_{ij} \right)^2 \right\} \]
+
+\subsection{4}\label{section-1}
+
+The joint posterior is obtained by
+
+\begin{align*}
+    \pi(\theta,\phi,m|\pmb{y}) \propto & f(\pmb{y}| \theta, \phi, m) \pi(\theta)\pi(\phi)\pi(m)\\
+    \propto & \theta^{\sum_{i=1}^m y_i + \alpha -1} \exp \left\{-\theta\left(\beta + m \right) \right\} \phi^{\sum_{i = m+1}^n y_i + \gamma -1} \exp\left\{-\phi (\delta +n -m) \right\}
+\end{align*}
+
+Then the full conditionals are as follows
+\[\phi|m,\pmb{y} \sim Gamma\left(\sum_{i = m+1}^n y_i + \gamma -1, \delta + n -m\right) \]
+\[\theta|m,\pmb{y} \sim Gamma \left(\sum_{i=1}^m y_i + \alpha -1, \beta +m \right) \]
+\[\pi(m|\theta,\phi,\pmb{y}) \propto \theta^{\sum_{i=1}^m y_i +\alpha -1} \exp\left\{-\theta(\beta +m) \right\} \phi^{\sum_{i=m+1}^n y_i +\gamma -1} \exp\left\{-\phi(\delta +n -m) \right\} \]
+We now use a Metropolis-within-Gibbs method because it converges better.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Algorithm}
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{N)\{}
+\NormalTok{  theta_curr <-}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(}\DecValTok{1}\NormalTok{, }\KeywordTok{sum}\NormalTok{(y[}\DecValTok{1}\OperatorTok{:}\NormalTok{m_curr]) }\OperatorTok{+}\StringTok{ }\NormalTok{alpha, m_curr }\OperatorTok{+}\StringTok{ }\NormalTok{beta)}
+  
+\NormalTok{  phi_curr <-}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(}\DecValTok{1}\NormalTok{, }\KeywordTok{sum}\NormalTok{(y[}\OperatorTok{-}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{m_curr)]) }\OperatorTok{+}\StringTok{ }\NormalTok{gam, (n}\OperatorTok{-}\NormalTok{m_curr }\OperatorTok{+}\StringTok{ }\NormalTok{delta))}
+  
+\NormalTok{  m_new <-}\StringTok{ }\KeywordTok{sample}\NormalTok{((}\DecValTok{1}\OperatorTok{:}\NormalTok{n), }\DecValTok{1}\NormalTok{, }\OtherTok{FALSE}\NormalTok{)}
+  
+\NormalTok{  p_curr <-}\StringTok{ }\KeywordTok{lgamma}\NormalTok{(}\KeywordTok{sum}\NormalTok{(y[}\DecValTok{1}\OperatorTok{:}\NormalTok{m_curr]) }\OperatorTok{+}\StringTok{ }\NormalTok{alpha) }\OperatorTok{-}\StringTok{ }\NormalTok{(}\KeywordTok{sum}\NormalTok{(y[}\DecValTok{1}\OperatorTok{:}\NormalTok{m_curr]) }\OperatorTok{+}\StringTok{ }\NormalTok{alpha)}\OperatorTok{*}\KeywordTok{log}\NormalTok{(m_curr }\OperatorTok{+}\StringTok{ }\NormalTok{beta) }\OperatorTok{+}\KeywordTok{lgamma}\NormalTok{(}\KeywordTok{sum}\NormalTok{(y[}\OperatorTok{-}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{m_curr)]) }\OperatorTok{+}\StringTok{ }\NormalTok{gam) }\OperatorTok{-}\StringTok{ }\NormalTok{(}\KeywordTok{sum}\NormalTok{(y[}\OperatorTok{-}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{m_curr)]) }\OperatorTok{+}\StringTok{ }\NormalTok{gam)}\OperatorTok{*}\KeywordTok{log}\NormalTok{(n}\OperatorTok{-}\NormalTok{m_curr }\OperatorTok{+}\StringTok{ }\NormalTok{delta)}
+  
+\NormalTok{  p_new <-}\StringTok{ }\KeywordTok{lgamma}\NormalTok{(}\KeywordTok{sum}\NormalTok{(y[}\DecValTok{1}\OperatorTok{:}\NormalTok{m_new]) }\OperatorTok{+}\StringTok{ }\NormalTok{alpha) }\OperatorTok{-}\StringTok{ }\NormalTok{(}\KeywordTok{sum}\NormalTok{(y[}\DecValTok{1}\OperatorTok{:}\NormalTok{m_new]) }\OperatorTok{+}\StringTok{ }\NormalTok{alpha)}\OperatorTok{*}\KeywordTok{log}\NormalTok{(m_new }\OperatorTok{+}\StringTok{ }\NormalTok{beta) }\OperatorTok{+}\KeywordTok{lgamma}\NormalTok{(}\KeywordTok{sum}\NormalTok{(y[}\OperatorTok{-}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{m_new)]) }\OperatorTok{+}\StringTok{ }\NormalTok{gam) }\OperatorTok{-}\StringTok{ }\NormalTok{(}\KeywordTok{sum}\NormalTok{(y[}\OperatorTok{-}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\NormalTok{m_new)]) }\OperatorTok{+}\StringTok{ }\NormalTok{gam)}\OperatorTok{*}\KeywordTok{log}\NormalTok{(n}\OperatorTok{-}\NormalTok{m_new }\OperatorTok{+}\StringTok{ }\NormalTok{delta)}
+  \CommentTok{# calculate acceptance probability and accept/reject acordingly}
+\NormalTok{  accpt.prob <-}\StringTok{ }\KeywordTok{exp}\NormalTok{(p_new }\OperatorTok{-}\StringTok{ }\NormalTok{p_curr) }
+  \ControlFlowTok{if}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<}\StringTok{ }\NormalTok{accpt.prob)}
+\NormalTok{  \{}
+\NormalTok{    m_curr <-}\StringTok{ }\NormalTok{m_new}
+\NormalTok{  \}}
+  \CommentTok{# save the current draws}
+\NormalTok{  sample_save}\OperatorTok{$}\NormalTok{theta[i] <-}\StringTok{ }\NormalTok{theta_curr}
+\NormalTok{  sample_save}\OperatorTok{$}\NormalTok{phi[i] <-}\StringTok{ }\NormalTok{phi_curr}
+\NormalTok{  sample_save}\OperatorTok{$}\NormalTok{m[i] <-}\StringTok{ }\NormalTok{m_curr}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Using \(N=50000\) samples and a burnin of 5000, the results are plotted
+below with the red line signifying the mean for the parameters
+
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-34-1.pdf}
+
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-35-1.pdf}
+
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-36-1.pdf}
 
 
 \end{document}

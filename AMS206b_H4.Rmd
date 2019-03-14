@@ -172,11 +172,11 @@ nu_condit = function(nu, theta_curr){
 pcurr = function(nu_curr, theta_curr){
   return((n+nu_curr+2)*log(theta_curr)-n*lgamma(nu_curr) + nu_curr*(sum_logx-1) + 3*log(nu_curr) - theta_curr*(2+sum_x))
 }
+N = 1000
 ```
 
 ```{r}
 sample = NULL
-N = 1000
 sample$theta = rep(NA,N)
 sample$nu = rep(NA,N)
 alpha = 3
@@ -245,12 +245,15 @@ Now we develop a Metropolis-Hastings algorithm that jointly proposes $\log(\nu)$
 a Gaussian random walk centered on the current value of the parameters. Tune the
 variance-covariance matrix of the proposal using a test run that proposes the parameters
 independently:
+```{r,echo=F}
+N_test = 5000
+```
 
 ```{r}
 V = 0.05*diag(2)
 theta_curr = 2
 nu_curr = 3
-N_test = 5000
+
 for(i in 1:N_test){
   nu_new = exp(log(nu_curr) + rnorm(1,0,sqrt(V[1,1])))
   theta_new = exp(log(theta_curr) + rnorm(1,0, V[2,2]))
@@ -274,10 +277,11 @@ V = cov(cbind(sample$nu, sample$theta))
 pcurr2 = function(nu,theta){
   return(n*nu*log(theta) - n*lgamma(nu) + nu *(sum_logx -1) + 3*log(nu) + log(theta) - theta * (2 + sum_x))
 }
+N=10000
 ```
 
 ```{r}
-for(i in N_test+1:10000){
+for(i in N_test+1:N){
   new = mvrnorm(1, c(log(nu_curr), log(theta_curr)), V)
   nu_new = exp(new[1])
   theta_new = exp(new[2])
@@ -457,8 +461,94 @@ $$\pi(\tau^2, \sigma^2|y) \propto (\tau^2)^{-\left(\frac{I(J-1)}{2} + 1 \right)}
 $$ \times \exp\left\{ \frac{\sigma^2}{2\tau^2 (J\sigma^2 + \tau^2)} \sum_i \left( \sum_j y_{ij}^2 \right)\right\}$$
 $$ \times \exp\left\{\frac{1}{2IJ (J\sigma^2 + \tau^2)} \left(\sum_{ij} y_{ij} \right)^2 \right\} $$
 
+## 4
+
+The joint posterior is obtained by 
+
+\begin{align*}
+    \pi(\theta,\phi,m|\pmb{y}) \propto & f(\pmb{y}| \theta, \phi, m) \pi(\theta)\pi(\phi)\pi(m)\\
+    \propto & \theta^{\sum_{i=1}^m y_i + \alpha -1} \exp \left\{-\theta\left(\beta + m \right) \right\} \phi^{\sum_{i = m+1}^n y_i + \gamma -1} \exp\left\{-\phi (\delta +n -m) \right\}
+\end{align*}
 
 
+Then the full conditionals are as follows
+$$\phi|m,\pmb{y} \sim Gamma\left(\sum_{i = m+1}^n y_i + \gamma -1, \delta + n -m\right) $$
+$$\theta|m,\pmb{y} \sim Gamma \left(\sum_{i=1}^m y_i + \alpha -1, \beta +m \right) $$
+$$\pi(m|\theta,\phi,\pmb{y}) \propto \theta^{\sum_{i=1}^m y_i +\alpha -1} \exp\left\{-\theta(\beta +m) \right\} \phi^{\sum_{i=m+1}^n y_i +\gamma -1} \exp\left\{-\phi(\delta +n -m) \right\} $$
+We now use a Metropolis-within-Gibbs method because it converges better.
+
+```{r, echo=F}
+# upload mining data
+y <-c(4,5,4,1,0,4,3,4,0,6,3,3,4,0,2,6,3,3,5,4,5,3,1,4,4,1,5,5,3,4,2,5,2,2,3,4,2,1,3,2,2,1, 1,1,1,3,0,0,1,0,1,1,0,0,3,1,0,3,2,2,0,1,1,1,0,1,0,1,0,0,0,2,1,0,0,0,1,1,0,2,3,3,1,1,2,1,1, 1,1,2,4,2,0,0,0,1,4,0,0,0,1,0,0,0,0,0,1,0,0,1,0,1)
+n <- length(y)
+# specify hyperparameters. In this case using the data.
+alpha <- 3
+beta <- alpha/mean(y[1:40]) 
+gam <- 3
+delta <- gam/mean(y[-(1:40)])
+
+# set up MCMC variables
+N <- 50000
+N.burn <- 5000
+sample_save <- NULL
+sample_save$m <- rep(NA, N) 
+sample_save$th <- rep(NA, N) 
+sample_save$phi <- rep(NA, N)
+
+# initialize chains
+theta_curr <- rgamma(1, alpha, beta) 
+phi_curr <- rgamma(1, gam, delta) 
+m_curr <- 40
+set.seed(2)
+```
+
+```{r}
+# Algorithm
+for(i in 1:N){
+  theta_curr <- rgamma(1, sum(y[1:m_curr]) + alpha, m_curr + beta)
+  
+  phi_curr <- rgamma(1, sum(y[-(1:m_curr)]) + gam, (n-m_curr + delta))
+  
+  m_new <- sample((1:n), 1, FALSE)
+  
+  p_curr <- lgamma(sum(y[1:m_curr]) + alpha) - (sum(y[1:m_curr]) + alpha)*log(m_curr + beta) +lgamma(sum(y[-(1:m_curr)]) + gam) - (sum(y[-(1:m_curr)]) + gam)*log(n-m_curr + delta)
+  
+  p_new <- lgamma(sum(y[1:m_new]) + alpha) - (sum(y[1:m_new]) + alpha)*log(m_new + beta) +lgamma(sum(y[-(1:m_new)]) + gam) - (sum(y[-(1:m_new)]) + gam)*log(n-m_new + delta)
+  # calculate acceptance probability and accept/reject acordingly
+  accpt.prob <- exp(p_new - p_curr) 
+  if(runif(1) < accpt.prob)
+  {
+    m_curr <- m_new
+  }
+  # save the current draws
+  sample_save$theta[i] <- theta_curr
+  sample_save$phi[i] <- phi_curr
+  sample_save$m[i] <- m_curr
+}
+```
 
 
+Using $N=50000$ samples and a burnin of 5000, the results are plotted below with the red line signifying the mean for the parameters
 
+```{r, echo=F}
+par(mfrow = c(1,2))
+plot.ts(tail(sample_save$phi,5000), main = "Traceplot", ylab = expression(phi), xlab = "")
+abline(h = mean(tail(sample_save$phi,5000)), col = "red")
+
+hist(tail(sample_save$phi,5000), xlab = expression(phi), main = expression("Histogram for " ~ phi))
+abline(v = mean(tail(sample_save$phi,5000)), col = "red")
+
+```
+
+```{r, echo=F}
+par(mfrow = c(1,2))
+plot.ts(tail(sample_save$theta,5000), main = "Traceplot", ylab = expression(theta), xlab = "")
+abline(h = mean(tail(sample_save$theta,5000)), col = "red")
+hist(tail(sample_save$theta,5000), xlab = expression(theta), main = expression("Histogram for " ~ theta))
+abline(v = mean(tail(sample_save$theta,5000)), col = "red")
+```
+
+```{r, echo=F}
+hist(tail(sample_save$m,5000), xlab = expression(m), main = expression("Histogram for " ~ m))
+abline(v = mean(tail(sample_save$m,5000)), col = "red")
+```
