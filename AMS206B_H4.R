@@ -184,3 +184,26 @@ quantile(theta2, probs = c(0.025,0.975))
 plot.ts(nu2[0:5000])
 plot.ts(theta2[5000:10000])
 autocorr.plot(nu2, auto.layout = F)
+
+
+#### 2C ####
+h = function(w) {
+  a1 = (exp(w[2]) - 1) * sum.log.x + 3 * w[2] - exp(w[2])
+  return(-(a1 - n * lgamma(exp(w[2])) + (2 + n * exp(w[2])) * w[1] - exp(w[1]) * (2 + sum.x) ))
+}
+
+
+for(i in N_test+1:N){
+  nu_new = exp(log(nu_curr) + rnorm(1,0,sqrt(V[1,1])))
+  theta_new = exp(log(theta_curr) + rnorm(1,0,sqrt(V[2,2])))
+  p_curr = pcurr(nu_curr = nu_curr, theta_curr = theta_curr)
+  p_new =pcurr(nu_curr = nu_new, theta_curr = theta_new)
+  
+  accept = exp(p_new - p_curr)
+  if(runif(1) < accept){
+    nu_curr = nu_new
+    theta_curr = theta_new
+  }
+  sample$theta[i] = theta_curr
+  sample$nu[i] = nu_curr
+}

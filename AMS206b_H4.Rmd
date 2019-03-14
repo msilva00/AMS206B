@@ -304,3 +304,85 @@ par(mfrow = c(1,2))
 plot.ts(tail(sample$theta,5000),ylab = expression(theta), xlab = "", main = "Trace")
 plot.ts(tail(sample$nu,5000), ylab = expression(nu), xlab = "", main = "Trace")
 ```
+
+## 2C
+
+Now we are going to develop a Metropolis algorithm that jointly proposes $\log\nu$ and $\log\theta$ using independent proposals based on Laplace approximation of the posterior distribution of $\log\nu$ and $\log\theta$. 
+
+We let $t=\log\theta$ and $v =\log\nu$, then the posterior becomes 
+\begin{align*} 
+\pi(\theta,\nu|\pmb{x}) &\propto \exp\left\{(\nu -1) \sum_{i=1}^n \log x_i +(a -1)\log\nu - b\nu -n\log\Gamma(\nu) \right\}\\
+&\times \exp\left\{(\alpha +n\nu-1)\log\theta -\theta\left(\beta + \sum_{i=1}^n x_i \right)\right\}\\
+\Rightarrow \pi(t,v|\pmb{x}) &\propto \exp\left\{(e^v -1) sum_{i=1}^n \log x_i + av - be^v -n\log \Gamma(e^v)\right\}\\
+&\times \exp\left\{(a +ne^v)t - e^t\left(\beta + sum_{i=1}^n x_i\right) \right\}
+\end{align*}
+
+Now, we let
+$$h(t,v) = (e^v =1)\sum_{i=1}^n x_i + av -be^v-n\log \Gamma(e^v)\exp\left\{(a +ne^v)t - e^t\left(\beta + sum_{i=1}^n x_i\right) \right\}$$
+
+Then we use the definition of Laplace approximation
+
+```{r}
+h = function(w) {
+  a1 = (exp(w[2]) - 1) * sum_logx + 3 * w[2] - exp(w[2])
+  return(-(a1 - n * lgamma(exp(w[2])) + 
+             (2 + n * exp(w[2])) * w[1] - exp(w[1]) * (2 + sum_x)))
+}
+laplace = optim(c(0,1), h, hessian = T)
+```
+
+The laplace maximum for the parameters are
+```{r,echo=F}
+laplace$par
+```
+and the hessian obtained at the maximum is
+
+```{r, echo=F}
+laplace$hessian
+V = diag(diag(solve(laplace$hessian)))
+```
+
+Now we update the variance-covariance matrix then resume the Metropolis sampling algorithm
+```{r}
+for(i in N_test+1:N){
+  nu_new = exp(log(nu_curr) + rnorm(1,0,sqrt(V[1,1])))
+  theta_new = exp(log(theta_curr) + rnorm(1,0,sqrt(V[2,2])))
+  p_curr = pcurr(nu_curr = nu_curr, theta_curr = theta_curr)
+  p_new =pcurr(nu_curr = nu_new, theta_curr = theta_new)
+  
+  accept = exp(p_new - p_curr)
+  if(runif(1) < accept){
+    nu_curr = nu_new
+    theta_curr = theta_new
+  }
+  sample$theta[i] = theta_curr
+  sample$nu[i] = nu_curr
+}
+```
+
+```{r, echo =F}
+par(mfrow = c(1,2))
+plot.ts(tail(sample$theta,5000), xlab="", ylab = expression(theta), main = "Traceplot")
+plot.ts(tail(sample$nu,5000), xlab="", ylab = expression(nu), main = "Traceplot")
+```
+
+The effective sample size associated with $\theta$ is
+```{r,echo=F}
+effectiveSize(tail(sample$theta,5000))
+```
+
+The effective sample size associated with $\nu$ is
+```{r,echo=F}
+effectiveSize(tail(sample$nu,5000))
+```
+
+\begin{center}
+\begin{tabular}{ |c|c|c| }
+\hline
+ parameter & mean & 95\% Credible Interval \\ 
+ \hline
+ $\theta$ & 1.05 & (0.56,1.58) \\  
+ $\nu$ & 2.55 & (1.49, 3.79)\\
+ \hline
+\end{tabular}
+\end{center}

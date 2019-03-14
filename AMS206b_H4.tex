@@ -380,5 +380,100 @@ The trace plot for these samples are below
 
 \includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-20-1.pdf}
 
+\subsection{2C}\label{c}
+
+Now we are going to develop a Metropolis algorithm that jointly proposes
+\(\log\nu\) and \(\log\theta\) using independent proposals based on
+Laplace approximation of the posterior distribution of \(\log\nu\) and
+\(\log\theta\).
+
+We let \(t=\log\theta\) and \(v =\log\nu\), then the posterior becomes
+
+\begin{align*} 
+\pi(\theta,\nu|\pmb{x}) &\propto \exp\left\{(\nu -1) \sum_{i=1}^n \log x_i +(a -1)\log\nu - b\nu -n\log\Gamma(\nu) \right\}\\
+&\times \exp\left\{(\alpha +n\nu-1)\log\theta -\theta\left(\beta + \sum_{i=1}^n x_i \right)\right\}\\
+\Rightarrow \pi(t,v|\pmb{x}) &\propto \exp\left\{(e^v -1) sum_{i=1}^n \log x_i + av - be^v -n\log \Gamma(e^v)\right\}\\
+&\times \exp\left\{(a +ne^v)t - e^t\left(\beta + sum_{i=1}^n x_i\right) \right\}
+\end{align*}
+
+Now, we let
+\[h(t,v) = (e^v =1)\sum_{i=1}^n x_i + av -be^v-n\log \Gamma(e^v)\exp\left\{(a +ne^v)t - e^t\left(\beta + sum_{i=1}^n x_i\right) \right\}\]
+
+Then we use the definition of Laplace approximation
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{h =}\StringTok{ }\ControlFlowTok{function}\NormalTok{(w) \{}
+\NormalTok{  a1 =}\StringTok{ }\NormalTok{(}\KeywordTok{exp}\NormalTok{(w[}\DecValTok{2}\NormalTok{]) }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{*}\StringTok{ }\NormalTok{sum_logx }\OperatorTok{+}\StringTok{ }\DecValTok{3} \OperatorTok{*}\StringTok{ }\NormalTok{w[}\DecValTok{2}\NormalTok{] }\OperatorTok{-}\StringTok{ }\KeywordTok{exp}\NormalTok{(w[}\DecValTok{2}\NormalTok{])}
+  \KeywordTok{return}\NormalTok{(}\OperatorTok{-}\NormalTok{(a1 }\OperatorTok{-}\StringTok{ }\NormalTok{n }\OperatorTok{*}\StringTok{ }\KeywordTok{lgamma}\NormalTok{(}\KeywordTok{exp}\NormalTok{(w[}\DecValTok{2}\NormalTok{])) }\OperatorTok{+}\StringTok{ }
+\StringTok{             }\NormalTok{(}\DecValTok{2} \OperatorTok{+}\StringTok{ }\NormalTok{n }\OperatorTok{*}\StringTok{ }\KeywordTok{exp}\NormalTok{(w[}\DecValTok{2}\NormalTok{])) }\OperatorTok{*}\StringTok{ }\NormalTok{w[}\DecValTok{1}\NormalTok{] }\OperatorTok{-}\StringTok{ }\KeywordTok{exp}\NormalTok{(w[}\DecValTok{1}\NormalTok{]) }\OperatorTok{*}\StringTok{ }\NormalTok{(}\DecValTok{2} \OperatorTok{+}\StringTok{ }\NormalTok{sum_x)))}
+\NormalTok{\}}
+\NormalTok{laplace =}\StringTok{ }\KeywordTok{optim}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{), h, }\DataTypeTok{hessian =}\NormalTok{ T)}
+\end{Highlighting}
+\end{Shaded}
+
+The laplace maximum for the parameters are
+
+\begin{verbatim}
+## [1] 0.09685737 1.00165219
+\end{verbatim}
+
+and the hessian obtained at the maximum is
+
+\begin{verbatim}
+##           [,1]      [,2]
+## [1,]  70.06943 -68.06943
+## [2,] -68.06943  85.06425
+\end{verbatim}
+
+Now we update the variance-covariance matrix then resume the Metropolis
+sampling algorithm
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in}\NormalTok{ N_test}\OperatorTok{+}\DecValTok{1}\OperatorTok{:}\NormalTok{N)\{}
+\NormalTok{  nu_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\KeywordTok{log}\NormalTok{(nu_curr) }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\KeywordTok{sqrt}\NormalTok{(V[}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{])))}
+\NormalTok{  theta_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\KeywordTok{log}\NormalTok{(theta_curr) }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\KeywordTok{sqrt}\NormalTok{(V[}\DecValTok{2}\NormalTok{,}\DecValTok{2}\NormalTok{])))}
+\NormalTok{  p_curr =}\StringTok{ }\KeywordTok{pcurr}\NormalTok{(}\DataTypeTok{nu_curr =}\NormalTok{ nu_curr, }\DataTypeTok{theta_curr =}\NormalTok{ theta_curr)}
+\NormalTok{  p_new =}\KeywordTok{pcurr}\NormalTok{(}\DataTypeTok{nu_curr =}\NormalTok{ nu_new, }\DataTypeTok{theta_curr =}\NormalTok{ theta_new)}
+  
+\NormalTok{  accept =}\StringTok{ }\KeywordTok{exp}\NormalTok{(p_new }\OperatorTok{-}\StringTok{ }\NormalTok{p_curr)}
+  \ControlFlowTok{if}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<}\StringTok{ }\NormalTok{accept)\{}
+\NormalTok{    nu_curr =}\StringTok{ }\NormalTok{nu_new}
+\NormalTok{    theta_curr =}\StringTok{ }\NormalTok{theta_new}
+\NormalTok{  \}}
+\NormalTok{  sample}\OperatorTok{$}\NormalTok{theta[i] =}\StringTok{ }\NormalTok{theta_curr}
+\NormalTok{  sample}\OperatorTok{$}\NormalTok{nu[i] =}\StringTok{ }\NormalTok{nu_curr}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-25-1.pdf}
+
+The effective sample size associated with \(\theta\) is
+
+\begin{verbatim}
+##     var1 
+## 152.8612
+\end{verbatim}
+
+The effective sample size associated with \(\nu\) is
+
+\begin{verbatim}
+##     var1 
+## 182.2601
+\end{verbatim}
+
+\begin{center}
+\begin{tabular}{ |c|c|c| }
+\hline
+ parameter & mean & 95\% Credible Interval \\ 
+ \hline
+ $\theta$ & 1.05 & (0.56,1.58) \\  
+ $\nu$ & 2.55 & (1.49, 3.79)\\
+ \hline
+\end{tabular}
+\end{center}
+
 
 \end{document}
