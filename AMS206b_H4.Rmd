@@ -40,7 +40,8 @@ MH_alg1 = function(N){
     z_new = rgamma(1, a, b)
     p_new = pdf_z(z_new)
     
-    accept = exp(p_new + dgamma(current_z,a,b,log = T) - p_new - dgamma(z_new,a,b,log = T))
+    accept = exp(p_new + dgamma(current_z,a,b,log = T) - 
+                   p_new - dgamma(z_new,a,b,log = T))
     if(runif(1) < accept){
       current_z = z_new
       count = count + 1
@@ -123,7 +124,7 @@ MH_RW = alg2$MH_RW
 count = alg2$a_count
 ```
 
-The mean for the samples is 
+The mean for the samples, $E(W_{samples})$, is 
 ```{r, echo=F}
 (mean2_1 = mean(MH_RW))
 ```
@@ -154,8 +155,152 @@ thus, $\theta|\nu, \pmb{x} \sim Gamma(n\nu, \beta + \sum x_i)$.
 
 $$\pi(\nu|\theta,\pmb{x}) \propto \theta^{n\nu}\frac{\left(\prod_{i=1}^nx_i \right)^{\nu-1}\nu^{a-1} e^{-b\nu}}{\left(\Gamma(\nu) \right)^n}$$
 
-which is not a recognizable distribution. We use a Metropolis within Gibbs algorithm to sample from the full conditionals, using a random walk proposal on $log(\nu)$
+which is not a recognizable distribution. We use a Metropolis within Gibbs algorithm to sample from the full conditionals, using a random walk proposal on $log(\nu)$. I tried various hyperparameters appropriate for this data.
 
 ```{r, echo=F, include=F}
+x = read.table("my-data.txt", header = F)[,1]
+n = length(x)
+sum_x = sum(x)
+sum_logx = sum(log(x))
+library(coda)
+library(mvtnorm)
+library(MASS)
 
+nu_condit = function(nu, theta_curr){
+  return(nu*(sum_logx + n*log(theta_curr)-1)-n*lgamma(nu)+3*log(nu))
+}
+pcurr = function(nu_curr, theta_curr){
+  return((n+nu_curr+2)*log(theta_curr)-n*lgamma(nu_curr) + nu_curr*(sum_logx-1) + 3*log(nu_curr) - theta_curr*(2+sum_x))
+}
+```
+
+```{r}
+sample = NULL
+N = 1000
+sample$theta = rep(NA,N)
+sample$nu = rep(NA,N)
+alpha = 3
+beta = 2
+v = 0.05
+theta_curr = 2
+nu_curr = 3
+set.seed(2)
+for(i in 1:N){
+  theta_curr = rgamma(1, n*nu_curr + alpha, beta + sum_x)
+  nu_new = exp(log(nu_curr) + rnorm(1,0,sqrt(v)))
+  pnu_curr = nu_condit(nu_curr, theta_curr)
+  pnu_new = nu_condit(nu_new, theta_curr)
+  accept = exp(pnu_new - pnu_curr)
+  if(runif(1) < accept)
+    nu_curr = nu_new
+  
+  sample$theta[i] = theta_curr
+  sample$nu[i] = nu_new
+}
+```
+
+
+The effective sample size for $\theta$ is
+```{r, echo=F}
+effectiveSize(sample$theta)
+```
+
+The effective sample size for $\nu$ is 
+```{r, echo = F}
+effectiveSize(sample$nu)
+```
+
+The table below summarizes the results
+
+\begin{center}
+\begin{tabular}{ |c|c|c| }
+\hline
+ parameter & mean & 95\% Credible Interval \\ 
+ \hline
+ $\theta$ & 1.13 & (0.635,1.846) \\  
+ $\nu$ & 2.807 & (1.669, 4.55)\\
+ \hline
+\end{tabular}
+\end{center}
+
+The traceplots are below
+
+```{r, echo=F}
+par(mfrow = c(1,2))
+plot.ts(sample$theta, ylab = expression(theta), xlab = "", main = "Trace")
+plot.ts(sample$nu, ylab = expression(nu), xlab = "", main = "Trace")
+```
+
+## 2B
+
+Now we develop a Metropolis-Hastings algorithm that jointly proposes $\log(\nu)$ and $\log(\theta)$ using
+a Gaussian random walk centered on the current value of the parameters. Tune the
+variance-covariance matrix of the proposal using a test run that proposes the parameters
+independently:
+
+```{r}
+V = 0.05*diag(2)
+theta_curr = 2
+nu_curr = 3
+N_test = 5000
+for(i in 1:N_test){
+  nu_new = exp(log(nu_curr) + rnorm(1,0,sqrt(V[1,1])))
+  theta_new = exp(log(theta_curr) + rnorm(1,0, V[2,2]))
+  p_curr = pcurr(nu_curr, theta_curr)
+  p_new = pcurr(nu_new, theta_new)
+  accept = exp(p_new - p_curr)
+  if(runif(1) < accept){
+    nu_curr = nu_new
+    theta_curr = theta_new
+  }
+  sample$theta[i] = theta_curr
+  sample$nu[i] = nu_curr
+}
+```
+
+
+```{r,echo=F}
+V = cov(cbind(sample$nu, sample$theta))
+
+
+pcurr2 = function(nu,theta){
+  return(n*nu*log(theta) - n*lgamma(nu) + nu *(sum_logx -1) + 3*log(nu) + log(theta) - theta * (2 + sum_x))
+}
+```
+
+```{r}
+for(i in N_test+1:10000){
+  new = mvrnorm(1, c(log(nu_curr), log(theta_curr)), V)
+  nu_new = exp(new[1])
+  theta_new = exp(new[2])
+  p_curr = pcurr2(nu_curr, theta_curr)
+  p_new = pcurr2(nu_new, theta_new)
+  acceptance = exp(p_new - p_curr)
+  if(runif(1) < acceptance){
+    nu_curr = nu_new
+    theta_curr = theta_new
+  }
+  sample$theta[i] = theta_curr
+  sample$nu[i] = nu_curr
+}
+```
+
+
+\begin{center}
+\begin{tabular}{ |c|c|c| }
+\hline
+ parameter & mean & 95\% Credible Interval \\ 
+ \hline
+ $\theta$ & 1.11 & (0.59,1.79) \\  
+ $\nu$ & 2.807 & (1.49, 4.38)\\
+ \hline
+\end{tabular}
+\end{center}
+
+The trace plot for these samples are below
+
+```{r, echo=F}
+par(mfrow = c(1,2))
+plot.ts(tail(sample$theta,5000),ylab = expression(theta), xlab = "", main = "Trace")
+plot.ts(tail(sample$nu,5000), ylab = expression(nu), xlab = "", main = "Trace")
 ```

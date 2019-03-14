@@ -1,6 +1,6 @@
-install.packages("coda")
-install.packages("mvtnorm")
-install.packages("MASS")
+# install.packages("coda")
+# install.packages("mvtnorm")
+# install.packages("MASS")
 
 #### 1A ####
 theta_1 = 1.5 # true value theta1
@@ -95,15 +95,15 @@ nu_condit = function(nu, theta_curr){
 
 
 sample = NULL
-N = 10000
+N = 1000
 sample$theta = rep(NA,N)
 sample$nu = rep(NA,N)
-alpha = 3
-beta = 2
+alpha = 1
+beta = 1
 v = 0.01
 theta_curr = 2
 nu_curr = 3
-
+set.seed(1)
 for(i in 1:N){
   theta_curr = rgamma(1, n*nu_curr + alpha, beta + sum_x)
   nu_new = exp(log(nu_curr) + rnorm(1,0,sqrt(v)))
@@ -117,23 +117,30 @@ for(i in 1:N){
   sample$nu[i] = nu_new
 }
 
+effectiveSize(sample$theta)
+effectiveSize(sample$nu)
+
 
 thetas = sample$theta
 nus = sample$nu 
 mean(nus)
 mean(thetas)
 
-plot.ts(thetas)
-plot.ts(nus)
+plot.ts(thetas, ylab = expression(theta), xlab = "", main = "Trace")
+plot.ts(nus, ylab = expression(nu), xlab = "", main = "Trace")
+
+quantile(nus, c(0.025,0.975))
+quantile(thetas, c(0.025,0.975))
 
 pcurr = function(nu_curr, theta_curr){
   return((n+nu_curr+2)*log(theta_curr)-n*lgamma(nu_curr) + nu_curr*(sum_logx-1) + 3*log(nu_curr) - theta_curr*(2+sum_x))
 }
 #### 2B ####
+set.seed(1)
 V = 0.05*diag(2)
 theta_curr = 2
 nu_curr = 3
-N_test = 5000
+N_test = 500
 for(i in 1:N_test){
   nu_new = exp(log(nu_curr) + rnorm(1,0,sqrt(V[1,1])))
   theta_new = exp(log(theta_curr) + rnorm(1,0, V[2,2]))

@@ -154,7 +154,8 @@ distribution as the proposal density.
 \NormalTok{    z_new =}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(}\DecValTok{1}\NormalTok{, a, b)}
 \NormalTok{    p_new =}\StringTok{ }\KeywordTok{pdf_z}\NormalTok{(z_new)}
     
-\NormalTok{    accept =}\StringTok{ }\KeywordTok{exp}\NormalTok{(p_new }\OperatorTok{+}\StringTok{ }\KeywordTok{dgamma}\NormalTok{(current_z,a,b,}\DataTypeTok{log =}\NormalTok{ T) }\OperatorTok{-}\StringTok{ }\NormalTok{p_new }\OperatorTok{-}\StringTok{ }\KeywordTok{dgamma}\NormalTok{(z_new,a,b,}\DataTypeTok{log =}\NormalTok{ T))}
+\NormalTok{    accept =}\StringTok{ }\KeywordTok{exp}\NormalTok{(p_new }\OperatorTok{+}\StringTok{ }\KeywordTok{dgamma}\NormalTok{(current_z,a,b,}\DataTypeTok{log =}\NormalTok{ T) }\OperatorTok{-}\StringTok{ }
+\StringTok{                   }\NormalTok{p_new }\OperatorTok{-}\StringTok{ }\KeywordTok{dgamma}\NormalTok{(z_new,a,b,}\DataTypeTok{log =}\NormalTok{ T))}
     \ControlFlowTok{if}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<}\StringTok{ }\NormalTok{accept)\{}
 \NormalTok{      current_z =}\StringTok{ }\NormalTok{z_new}
 \NormalTok{      count =}\StringTok{ }\NormalTok{count }\OperatorTok{+}\StringTok{ }\DecValTok{1}
@@ -221,7 +222,7 @@ with this density.
 \end{Highlighting}
 \end{Shaded}
 
-The mean for the samples is
+The mean for the samples, \(E(W_{samples})\), is
 
 \begin{verbatim}
 ## [1] 1.114488
@@ -251,6 +252,133 @@ The full conditionals:
 thus, \(\theta|\nu, \pmb{x} \sim Gamma(n\nu, \beta + \sum x_i)\).
 
 \[\pi(\nu|\theta,\pmb{x}) \propto \theta^{n\nu}\frac{\left(\prod_{i=1}^nx_i \right)^{\nu-1}\nu^{a-1} e^{-b\nu}}{\left(\Gamma(\nu) \right)^n}\]
+
+which is not a recognizable distribution. We use a Metropolis within
+Gibbs algorithm to sample from the full conditionals, using a random
+walk proposal on \(log(\nu)\). I tried various hyperparameters
+appropriate for this data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sample =}\StringTok{ }\OtherTok{NULL}
+\NormalTok{N =}\StringTok{ }\DecValTok{1000}
+\NormalTok{sample}\OperatorTok{$}\NormalTok{theta =}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\OtherTok{NA}\NormalTok{,N)}
+\NormalTok{sample}\OperatorTok{$}\NormalTok{nu =}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\OtherTok{NA}\NormalTok{,N)}
+\NormalTok{alpha =}\StringTok{ }\DecValTok{3}
+\NormalTok{beta =}\StringTok{ }\DecValTok{2}
+\NormalTok{v =}\StringTok{ }\FloatTok{0.05}
+\NormalTok{theta_curr =}\StringTok{ }\DecValTok{2}
+\NormalTok{nu_curr =}\StringTok{ }\DecValTok{3}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{2}\NormalTok{)}
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{N)\{}
+\NormalTok{  theta_curr =}\StringTok{ }\KeywordTok{rgamma}\NormalTok{(}\DecValTok{1}\NormalTok{, n}\OperatorTok{*}\NormalTok{nu_curr }\OperatorTok{+}\StringTok{ }\NormalTok{alpha, beta }\OperatorTok{+}\StringTok{ }\NormalTok{sum_x)}
+\NormalTok{  nu_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\KeywordTok{log}\NormalTok{(nu_curr) }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\KeywordTok{sqrt}\NormalTok{(v)))}
+\NormalTok{  pnu_curr =}\StringTok{ }\KeywordTok{nu_condit}\NormalTok{(nu_curr, theta_curr)}
+\NormalTok{  pnu_new =}\StringTok{ }\KeywordTok{nu_condit}\NormalTok{(nu_new, theta_curr)}
+\NormalTok{  accept =}\StringTok{ }\KeywordTok{exp}\NormalTok{(pnu_new }\OperatorTok{-}\StringTok{ }\NormalTok{pnu_curr)}
+  \ControlFlowTok{if}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<}\StringTok{ }\NormalTok{accept)}
+\NormalTok{    nu_curr =}\StringTok{ }\NormalTok{nu_new}
+  
+\NormalTok{  sample}\OperatorTok{$}\NormalTok{theta[i] =}\StringTok{ }\NormalTok{theta_curr}
+\NormalTok{  sample}\OperatorTok{$}\NormalTok{nu[i] =}\StringTok{ }\NormalTok{nu_new}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+The effective sample size for \(\theta\) is
+
+\begin{verbatim}
+##     var1 
+## 37.15345
+\end{verbatim}
+
+The effective sample size for \(\nu\) is
+
+\begin{verbatim}
+##     var1 
+## 62.45584
+\end{verbatim}
+
+The table below summarizes the results
+
+\begin{center}
+\begin{tabular}{ |c|c|c| }
+\hline
+ parameter & mean & 95\% Credible Interval \\ 
+ \hline
+ $\theta$ & 1.13 & (0.635,1.846) \\  
+ $\nu$ & 2.807 & (1.669, 4.55)\\
+ \hline
+\end{tabular}
+\end{center}
+
+The traceplots are below
+
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-16-1.pdf}
+
+\subsection{2B}\label{b-1}
+
+Now we develop a Metropolis-Hastings algorithm that jointly proposes
+\(\log(\nu)\) and \(\log(\theta)\) using a Gaussian random walk centered
+on the current value of the parameters. Tune the variance-covariance
+matrix of the proposal using a test run that proposes the parameters
+independently:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{V =}\StringTok{ }\FloatTok{0.05}\OperatorTok{*}\KeywordTok{diag}\NormalTok{(}\DecValTok{2}\NormalTok{)}
+\NormalTok{theta_curr =}\StringTok{ }\DecValTok{2}
+\NormalTok{nu_curr =}\StringTok{ }\DecValTok{3}
+\NormalTok{N_test =}\StringTok{ }\DecValTok{5000}
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{N_test)\{}
+\NormalTok{  nu_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\KeywordTok{log}\NormalTok{(nu_curr) }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\KeywordTok{sqrt}\NormalTok{(V[}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{])))}
+\NormalTok{  theta_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(}\KeywordTok{log}\NormalTok{(theta_curr) }\OperatorTok{+}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{, V[}\DecValTok{2}\NormalTok{,}\DecValTok{2}\NormalTok{]))}
+\NormalTok{  p_curr =}\StringTok{ }\KeywordTok{pcurr}\NormalTok{(nu_curr, theta_curr)}
+\NormalTok{  p_new =}\StringTok{ }\KeywordTok{pcurr}\NormalTok{(nu_new, theta_new)}
+\NormalTok{  accept =}\StringTok{ }\KeywordTok{exp}\NormalTok{(p_new }\OperatorTok{-}\StringTok{ }\NormalTok{p_curr)}
+  \ControlFlowTok{if}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<}\StringTok{ }\NormalTok{accept)\{}
+\NormalTok{    nu_curr =}\StringTok{ }\NormalTok{nu_new}
+\NormalTok{    theta_curr =}\StringTok{ }\NormalTok{theta_new}
+\NormalTok{  \}}
+\NormalTok{  sample}\OperatorTok{$}\NormalTok{theta[i] =}\StringTok{ }\NormalTok{theta_curr}
+\NormalTok{  sample}\OperatorTok{$}\NormalTok{nu[i] =}\StringTok{ }\NormalTok{nu_curr}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in}\NormalTok{ N_test}\OperatorTok{+}\DecValTok{1}\OperatorTok{:}\DecValTok{10000}\NormalTok{)\{}
+\NormalTok{  new =}\StringTok{ }\KeywordTok{mvrnorm}\NormalTok{(}\DecValTok{1}\NormalTok{, }\KeywordTok{c}\NormalTok{(}\KeywordTok{log}\NormalTok{(nu_curr), }\KeywordTok{log}\NormalTok{(theta_curr)), V)}
+\NormalTok{  nu_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(new[}\DecValTok{1}\NormalTok{])}
+\NormalTok{  theta_new =}\StringTok{ }\KeywordTok{exp}\NormalTok{(new[}\DecValTok{2}\NormalTok{])}
+\NormalTok{  p_curr =}\StringTok{ }\KeywordTok{pcurr2}\NormalTok{(nu_curr, theta_curr)}
+\NormalTok{  p_new =}\StringTok{ }\KeywordTok{pcurr2}\NormalTok{(nu_new, theta_new)}
+\NormalTok{  acceptance =}\StringTok{ }\KeywordTok{exp}\NormalTok{(p_new }\OperatorTok{-}\StringTok{ }\NormalTok{p_curr)}
+  \ControlFlowTok{if}\NormalTok{(}\KeywordTok{runif}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{<}\StringTok{ }\NormalTok{acceptance)\{}
+\NormalTok{    nu_curr =}\StringTok{ }\NormalTok{nu_new}
+\NormalTok{    theta_curr =}\StringTok{ }\NormalTok{theta_new}
+\NormalTok{  \}}
+\NormalTok{  sample}\OperatorTok{$}\NormalTok{theta[i] =}\StringTok{ }\NormalTok{theta_curr}
+\NormalTok{  sample}\OperatorTok{$}\NormalTok{nu[i] =}\StringTok{ }\NormalTok{nu_curr}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}
+\begin{tabular}{ |c|c|c| }
+\hline
+ parameter & mean & 95\% Credible Interval \\ 
+ \hline
+ $\theta$ & 1.11 & (0.59,1.79) \\  
+ $\nu$ & 2.807 & (1.49, 4.38)\\
+ \hline
+\end{tabular}
+\end{center}
+
+The trace plot for these samples are below
+
+\includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-20-1.pdf}
 
 
 \end{document}
