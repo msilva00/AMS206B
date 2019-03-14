@@ -207,3 +207,74 @@ for(i in N_test+1:N){
   sample$theta[i] = theta_curr
   sample$nu[i] = nu_curr
 }
+
+#### 4 ####
+set.seed(2)
+# input data
+y <-c(4,5,4,1,0,4,3,4,0,6,3,3,
+      4,0,2,6,3,3,5,4,5,3,1,4,
+      4,1,5,5,3,4,2,5,2,2,3,4,
+      2,1,3,2,2,1, 1,1,1,3,0,0,
+      1,0,1,1,0,0,3,1,0,3,2,2,0,
+      1,1,1,0,1,0,1,0,0,0,2,1,0,
+      0,0,1,1,0,2,3,3,1,1,2,1,
+      1, 1,1,2,4,2,0,0,0,1,4,0,
+      0,0,1,0,0,0,0,0,1,0,0,1,0,1)
+n <- length(y)
+# specify hyperparameters. In this case using the data.
+alpha <- 3
+beta <- alpha/mean(y[1:40]) 
+gam <- 3
+delta <- gam/mean(y[-(1:40)])
+
+# set up MCMC variables
+N <- 50000
+N.burn <- 5000
+sample_save <- NULL
+sample_save$m <- rep(NA, N) 
+sample_save$theta <- rep(NA, N) 
+sample_save$phi <- rep(NA, N)
+
+# initialize chains
+theta_curr <- rgamma(1, alpha, beta) 
+phi_curr <- rgamma(1, gam, delta) 
+m_curr <- 40
+# sampling
+for(i in 1:N){
+  theta_curr <- rgamma(1, sum(y[1:m_curr]) + alpha, m_curr + beta)
+  
+  phi_curr <- rgamma(1, sum(y[-(1:m_curr)]) + gam, (n-m_curr + delta))
+  
+  m_new <- sample((1:n), 1, FALSE)
+  
+  p_curr <- lgamma(sum(y[1:m_curr]) + alpha) - (sum(y[1:m_curr]) + alpha)*log(m_curr + beta) +lgamma(sum(y[-(1:m_curr)]) + gam) - (sum(y[-(1:m_curr)]) + gam)*log(n-m_curr + delta)
+  
+  p_new <- lgamma(sum(y[1:m_new]) + alpha) - (sum(y[1:m_new]) + alpha)*log(m_new + beta) +lgamma(sum(y[-(1:m_new)]) + gam) - (sum(y[-(1:m_new)]) + gam)*log(n-m_new + delta)
+  # calculate acceptance probability and accept/reject acordingly
+  accpt.prob <- exp(p_new - p_curr) 
+  if(runif(1) < accpt.prob)
+  {
+    m_curr <- m_new
+  }
+  # save the current draws
+  sample_save$theta[i] <- theta_curr
+  sample_save$phi[i] <- phi_curr
+  sample_save$m[i] <- m_curr
+}
+
+# plots for phi
+plot.ts(tail(sample_save$phi,5000), main = "Traceplot", ylab = expression(phi), xlab = "")
+abline(h = mean(tail(sample_save$phi,5000)), col = "red")
+
+hist(tail(sample_save$phi,5000), xlab = expression(phi), main = expression("Histogram for " ~ phi))
+abline(v = mean(tail(sample_save$phi,5000)), col = "red")
+
+# plots for theta 
+plot.ts(tail(sample_save$theta,5000), main = "Traceplot", ylab = expression(theta), xlab = "")
+abline(h = mean(tail(sample_save$theta,5000)), col = "red")
+hist(tail(sample_save$theta,5000), xlab = expression(theta), main = expression("Histogram for " ~ theta))
+abline(v = mean(tail(sample_save$theta,5000)), col = "red")
+
+# plots for m
+plot.ts(tail(sample_save$m,5000), main = "Traceplot", ylab = expression(m), xlab = "")
+abline(h = mean(tail(sample_save$m,5000)), col = "red")

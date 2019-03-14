@@ -591,5 +591,30 @@ below with the red line signifying the mean for the parameters
 
 \includegraphics{AMS206b_H4_files/figure-latex/unnamed-chunk-36-1.pdf}
 
+\subsection{5}\label{section-2}
+
+Given the following
+\[y_{ij} \sim N\left(\alpha_i + \beta_i t_{ij}, \sigma^2 \right) \]
+\[ (\alpha_i, \beta_i)'|\alpha, \beta \sim N\left((\alpha,\beta)', diag(\tau_\alpha^{-1}, \tau_\beta^{-1}) \right) \]
+\[(\alpha, \beta)' \sim N \left((0,0)', diag(P_\alpha^{-1}, P_\beta^{-1}) \right)  \]
+Then we obtain the following joint posterior
+\[\pi(\cdot|\pmb{y}) \propto (\sigma^2)^{n/2} \exp\left\{-\frac{1}{2\sigma^2} \sum_{ij}(y_{ij} - (\alpha_i + \beta_i t_{ij}))^2 \right\} \]
+\[\times (\tau_\alpha)^{I/2}(\tau_\beta)^{I/2}\exp\left\{-\frac{1}{2}\left[P_\alpha \alpha^2 + P_\beta  \beta^2\right] \right\} \]
+\[\times \exp\left\{- \frac{1}{2}\left[\tau_\alpha \sum_{i = 1}^I (\alpha - \alpha_i)^2 + \tau_\beta \sum_{i = 1}^I(\beta - \beta_i)^2 \right] \right\} \]
+\[\times (\sigma^{-2}\tau_\alpha \tau_\beta)^{a-1} \exp \left\{ -b(\sigma^{-2} + \tau_\alpha + \tau_\beta) \right\} \]
+Which lead to the following full conditionals
+
+\[(\alpha|\pmb{y}, \cdot) \sim N \left( \frac{\tau_\alpha \sum_{i=1}^I \alpha_i}{ I\tau_\alpha + P_\alpha }, \frac{1}{I\tau_\alpha + P_\alpha} \right) \]
+\[(\beta| \pmb{y}, \cdot) \sim N \left(\frac{\tau_\beta \sum_{i=1}^I \beta_i}{ I\tau_\beta + P_\beta}, \frac{1}{I\tau_\beta + P_\beta} \right) \]
+
+\[(\tau_\alpha|\pmb{y}, \cdot) \sim Gamma\left(a + \frac{I}{2}, b + \frac{1}{2}  \sum_{i=1}^I (\alpha - \alpha_i)^2 \right) \]
+\[ (\tau_\beta|\pmb{y}, \cdot) \sim Gamma \left(a + \frac{I}{2}, \frac{1}{2} \sum_{i=1}^I (\beta-\beta_i)^2 \right) \]
+\[(\sigma^2|\pmb{y}, \cdot) \sim Gamma \left(a + \frac{n}{2}, b + \frac{1}{2}  \sum_{j=1}^{n_i} (y_{ij} - (\alpha_i + \beta_i t_{ij} ))^2 \right) \]
+\[(\alpha_i| \pmb{y}, \cdot) \sim N \left(\frac{\alpha \tau_\alpha + \sigma^{-2} \sum_{j=1}^{n_i} (y_{ij} - \beta_i t_{ij}) }{\tau_\alpha + \sigma^{-2} \sum_{j=1}^{n_i}t_{ij} }, \frac{1}{\tau_\alpha + \sigma^{-2} \sum_{j=1}^{n_i}t_{ij}} \right)\]
+\[(\beta_i|\pmb{y},\cdot) \sim N\left( \frac{\beta \tau_\beta + \sigma^{-2}\sum_{j=1}^{n_i}(y_{ij} - \alpha_i ) }{\tau_\beta + \sigma^{-2} \sum_{j=1}^{n_i} t_{ij}^2 }, \frac{1}{\tau_\beta + \sigma^{-2} \sum_{j=1}^{n_i} t_{ij}^2} \right) \]
+
+In the above the \(\cdot\) represents all of the parameters besides the
+one being conditioned on.
+
 
 \end{document}
