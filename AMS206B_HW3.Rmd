@@ -1,0 +1,39 @@
+---
+title: "AMS206 Homework3"
+author: "Mary Silva"
+date: "2/27/2019"
+output: pdf_document
+---
+
+```{r}
+# set the number of observations and true value of parameters
+n <- 1000
+theta <- 5
+sigma2 <- 1
+# generate dataset
+x <- rnorm(n, theta, sqrt(sigma2)) #set the number of MC samples
+N <- 5000
+#i. set hyperparameters for fairly informative priors
+theta0 <- theta
+k0 <- 0.01
+a <- 1000+1
+b <- sigma2/(a-1)
+#calculate posterior parameters
+m <- (theta0 + n*k0*mean(x))/(1+n*k0)
+alpha <- a + n/2
+beta <- 1/b + sum(x^2)/2 + theta0^2/(2*k0) - (theta0 + n*k0*mean(x))^2/(2*k0*(1+n*k0))
+#MC simulation
+sig2.1 <- 1/rgamma(N, alpha, beta)
+theta1 <- rnorm(N, m, sqrt(sig2.1/(1/k0 + n)))
+```
+```{r, echo=F}
+hist(theta1, col=8, lwd=2, , main="", cex.axis=1.5, cex.lab=1.5)
+abline(v=theta, lty=2, lwd=3, col=2)
+```
+
+
+```{r, echo=F}
+hist(sig2.1, col=8, lwd=2, , main="", cex.axis=1.5, cex.lab=1.5) 
+abline(v=sigma2, lty=2, lwd=3, col=2)
+```
+
