@@ -3,7 +3,7 @@ set.seed(454)
 
 source("fn-density-1.R")
 
-den <- read.table("pdensity.dat", header=TRUE)
+den <- read.csv("pdensity.txt", header = T, sep = "")
 N <- nrow(den)
 
 pdf("dat.pdf")
